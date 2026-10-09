@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#173b32">
+<title>智能公文写作助手</title>
+<style>
+:root{--green:#173b32;--green2:#24584a;--paper:#f5f6f2;--ink:#202722;--muted:#65716b;--line:#dce3dd;--white:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.55}
+header{background:var(--green);color:#fff;padding:25px 18px 22px}
+.wrap{max-width:850px;margin:0 auto}
+.kicker{font-size:12px;letter-spacing:2px;opacity:.8}
+h1{font-size:25px;margin:7px 0 5px}
+header p{margin:0;color:#d9e6df;font-size:14px}
+main{padding:18px 14px 42px}
+.panel{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:17px;margin:0 0 14px;box-shadow:0 4px 18px #14271a08}
+h2{font-size:17px;margin:0 0 14px}
+label{display:block;font-size:14px;font-weight:650;margin:12px 0 6px}
+input,select,textarea{display:block;width:100%;border:1px solid #ccd6cf;border-radius:10px;background:#fff;color:var(--ink);font:inherit;padding:11px 12px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 0 0 3px #24584a16}
+textarea{min-height:90px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+button{border:0;border-radius:10px;padding:12px 14px;font:inherit;font-weight:700;cursor:pointer}
+.primary{background:var(--green);color:#fff;width:100%;margin-top:16px}
+.secondary{background:#e8eee9;color:var(--green)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.output{min-height:250px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.9;border:1px solid var(--line);border-radius:10px;padding:14px;background:#fcfdfb}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+.pill{display:inline-block;background:#e7efe9;color:var(--green);font-size:12px;padding:4px 8px;border-radius:999px;margin-bottom:8px}
+footer{text-align:center;font-size:12px;color:var(--muted);padding:0 14px 28px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}header{padding-top:20px}h1{font-size:23px}.panel{padding:14px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<div class="kicker">SMART WRITING WORKSPACE</div>
+<h1>智能公文写作助手</h1>
+<p>把工作要点整理成结构清晰、表达规范的中文初稿</p>
+</div></header>
+<main class="wrap">
+<section class="panel">
+<h2>01 / 文稿需求</h2>
+<label for="type">文稿类型</label>
+<select id="type">
+<option>领导讲话稿</option><option>专项工作动员讲话</option><option>工作总结</option><option>工作汇报</option><option>经验交流材料</option><option>会议主持词</option><option>通知</option>
+</select>
+<div class="grid">
+<div><label for="speaker">讲话人 / 起草单位</label><input id="speaker" placeholder="例如：区委书记、区信访局"></div>
+<div><label for="audience">会议 / 使用场景</label><input id="audience" placeholder="例如：专项工作动员大会"></div>
+<div><label for="length">目标字数</label><select id="length"><option value="800">约 800 字</option><option value="1000" selected>约 1000 字</option><option value="1500">约 1500 字</option><option value="2000">约 2000 字</option></select></div>
+<div><label for="tone">表达风格</label><select id="tone"><option>正式严谨</option><option>务实简洁</option><option>突出动员部署</option><option>突出经验亮点</option></select></div>
+</div>
+<label for="topic">主题</label><input id="topic" placeholder="例如：专项工作动员部署">
+<label for="background">背景与当前情况</label><textarea id="background" placeholder="写明工作背景、当前进展、存在的问题……"></textarea>
+<label for="points">重点内容 / 工作举措</label><textarea id="points" placeholder="可逐条填写重点任务、具体措施、责任分工等"></textarea>
+<label for="data">数据、案例、时间节点（选填）</label><textarea id="data" placeholder="只填写已核实的数据；没有就留空"></textarea>
+<button class="primary" id="generate">生成文稿初稿</button>
+<p class="note">当前为本地模板演示版：不调用 AI、不消耗 API Token。请将生成内容作为起草底稿，并核实政策、数据和事实。</p>
+</section>
+<section class="panel">
+<h2>02 / 文稿结果</h2>
+<div class="pill">可编辑 · 可复制</div>
+<textarea id="result" class="output" placeholder="生成的文稿会显示在这里。你也可以直接编辑。"></textarea>
+<div class="actions">
+<button class="secondary" id="copy">复制全文</button>
+<button class="secondary" id="download">下载 TXT</button>
+<button class="secondary" id="clear">清空</button>
+</div>
+<p id="message" class="note" aria-live="polite"></p>
+</section>
+</main>
+<footer>智能公文写作助手 · 网页演示版</footer>
+<script>
+const $=id=>document.getElementById(id);
+function val(id){return $(id).value.trim()}
+function makeDraft(){
+ const type=val('type'), speaker=val('speaker')||'有关负责同志', audience=val('audience')||'本次会议', topic=val('topic')||'相关重点工作', bg=val('background')||'当前，各项工作正在有序推进，同时也需要进一步梳理重点、压实责任、提升工作质效。', points=val('points')||'一是进一步明确目标任务。二是细化工作措施。三是强化协同配合。四是加强跟踪问效。', data=val('data'), tone=val('tone'), length=Number(val('length'));
+ const opening=type.includes('总结')?'现将有关工作情况总结如下。':type==='通知'?'现将有关事项通知如下。':type==='会议主持词'?'今天的会议主要有以下几项议程。':'今天召开'+audience+'，主要任务是围绕“'+topic+'”，进一步统一思想、明确任务、压实责任，推动各项工作落实落地。';
+ let sections;
+ if(type==='工作总结') sections=[
+ '一、主要工作开展情况\n'+bg+'\n围绕既定目标，重点推进以下工作：\n'+points,
+ '二、工作成效与经验做法\n坚持目标导向、问题导向和结果导向，注重统筹谋划、过程管理与协同推进，及时总结有效做法，推动工作形成闭环。'+(data?'\n相关数据和案例：'+data:''),
+ '三、存在的问题\n对照工作要求，还需进一步梳理薄弱环节，特别是在工作协同、细节落实、跟踪反馈等方面持续改进。',
+ '四、下一步工作安排\n下一步，将继续聚焦重点任务，完善工作机制，细化责任分工，强化督促检查，及时复盘评估，确保各项工作稳步推进。'
+ ]; else if(type==='通知') sections=[
+ '一、工作目标\n围绕“'+topic+'”，明确工作要求、时间节点和落实标准，确保任务推进有序。',
+ '二、主要事项\n'+points+'\n'+bg,
+ '三、工作要求\n（一）提高认识，认真组织实施。\n（二）明确责任，细化工作措施。\n（三）加强沟通，及时报送进展。\n（四）严守纪律，确保工作规范。'
+ ]; else sections=[
+ '一、提高站位，进一步统一思想认识\n要充分认识做好“'+topic+'”的重要意义，准确把握目标要求，把思想和行动统一到工作部署上来。'+bg,
+ '二、聚焦重点，推动各项任务落细落实\n要坚持问题导向和结果导向，紧盯关键环节，细化任务清单，明确责任分工，确保每项工作有人抓、有人管、能落实。\n'+points,
+ '三、压实责任，凝聚齐抓共管工作合力\n'+speaker+'要发挥统筹协调作用，各责任主体要主动担当、密切配合，健全信息沟通、跟踪督办和反馈改进机制，推动形成工作闭环。',
+ '四、强化落实，确保工作取得实效\n要坚持务实作风，力戒形式主义，注重实际效果。对重点任务及时跟进，对难点问题协调解决，对阶段性成效认真总结，推动工作不断取得新进展。'
+ ];
+ let draft=(type==='通知'?'关于做好'+topic+'有关工作的通知':type==='工作总结'?topic+'工作总结':speaker+'在'+audience+'上的'+type)+'\n\n'+opening+'\n\n'+sections.join('\n\n')+(data?'\n\n补充数据与案例（请核实后纳入正文）：\n'+data:'')+'\n\n以上内容为初稿框架，请结合实际情况进一步补充具体数据、典型案例、责任单位和时间节点。';
+ if(tone==='务实简洁') draft=draft.replace(/进一步/g,'').replace(/不断取得新进展/g,'取得实效');
+ $('result').value=draft;
+ $('message').textContent='已生成本地模板初稿。它不是 AI 实时生成内容，请按实际情况修改。';
+}
+$('generate').addEventListener('click',makeDraft);
+$('copy').addEventListener('click',async()=>{const text=$('result').value;if(!text){$('message').textContent='请先生成或填写文稿。';return}try{await navigator.clipboard.writeText(text);$('message').textContent='已复制全文。'}catch(e){$('result').focus();$('result').select();$('message').textContent='浏览器未允许自动复制，请长按选中文字并复制。'}});
+$('download').addEventListener('click',()=>{const text=$('result').value;if(!text){$('message').textContent='请先生成或填写文稿。';return}const blob=new Blob(['\ufeff'+text],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='公文初稿.txt';a.click();URL.revokeObjectURL(a.href);$('message').textContent='已尝试下载 TXT 文件。'});
+$('clear').addEventListener('click',()=>{$('result').value='';$('message').textContent='结果已清空。'});
+</script>
+</body>
+</html>
